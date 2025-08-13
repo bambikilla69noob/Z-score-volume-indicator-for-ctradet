@@ -1,0 +1,130 @@
+using System;
+using cAlgo.API;
+using cAlgo.API.Collections;
+using cAlgo.API.Indicators;
+using cAlgo.API.Internals;
+
+namespace cAlgo
+{
+    [Indicator(IsOverlay = false, TimeZone = TimeZones.UTC, AccessRights = AccessRights.None)]
+    public class volumeindicator : Indicator
+    {
+        [Parameter("period", DefaultValue = 20, Group = "input")]
+        public int period { get; set; }
+        [Output("Mean", LineColor = "Blue")]
+        public IndicatorDataSeries Mean { get; set; }
+        [Output("Normalbullvol", LineColor = "White", PlotType = PlotType.Histogram)]
+        public IndicatorDataSeries Bulln { get; set; }
+        [Output("moderatebullvol", LineColor = "Green", PlotType = PlotType.Histogram)]
+        public IndicatorDataSeries Bullm { get; set; }
+        [Output("Highbullvol", LineColor = "Olive", PlotType = PlotType.Histogram)]
+        public IndicatorDataSeries BullH { get; set; }
+        [Output("Normalbearvol", LineColor = "purple", PlotType = PlotType.Histogram)]
+        public IndicatorDataSeries Bearn { get; set; }
+        [Output("moderatebearvol", LineColor = "Red", PlotType = PlotType.Histogram)]
+        public IndicatorDataSeries Bearm { get; set; }
+        [Output("Highbearvol", LineColor = "maroon", PlotType = PlotType.Histogram)]
+        public IndicatorDataSeries BearH { get; set; }
+
+
+
+
+        public double Total = 0;
+        public bool IsBear, IsBull;
+        public double varience;
+        public double sd, findervar, finalvarience, Diff, Zscore, finalvar;
+
+
+
+
+
+
+
+
+        protected override void Initialize()
+        {
+            Total = 0;
+
+
+            period = 20;
+
+
+
+
+        }
+
+        public override void Calculate(int index)
+
+        {
+            sd = 0;
+            Diff = 0;
+            Zscore = 0;
+            findervar = 0;
+            finalvar = 0;
+            Total = 0;
+            IsBull = false;
+            IsBear = false;
+            Bulln[index] = 0;
+            Bullm[index] = 0;
+            BullH[index] = 0;
+            Bearn[index] = 0;
+            Bearm[index] = 0;
+            BearH[index] = 0;
+            Mean[index] = 0;
+
+
+
+
+            if (Bars.ClosePrices[index] > Bars.OpenPrices[index])
+            { IsBull = true; }
+            else
+            { IsBear = true; }
+
+            if (index < period)
+                return;
+            for (int i = index - period; i < index; i++)
+            {
+                Total += Bars.TickVolumes[i];
+
+            }
+            Mean[index] = Total / period;
+            Total = 0;
+            for (int count = index - period; count < index; count++)
+            { findervar += Math.Pow((Bars.TickVolumes[count] - Mean[index]), 2.0); }
+            finalvar = findervar / period;
+            sd = Math.Sqrt(finalvar);
+            Diff = Bars.TickVolumes[index] - Mean[index];
+            Zscore = Diff / sd;
+
+            if (Zscore >= 1.5 && Zscore < 2.5 && IsBull == true)
+            {
+                Bullm[index] = Bars.TickVolumes[index];
+            }
+            else if (Zscore < 1.5 && IsBull == true)
+            {
+                Bulln[index] = Bars.TickVolumes[index];
+            }
+            else if (Zscore >= 2.5 && IsBull == true)
+            {
+                BullH[index] = Bars.TickVolumes[index];
+            }
+            else if (Zscore >= 1.5 && Zscore < 2.5 && IsBear == true)
+            {
+                Bearm[index] = Bars.TickVolumes[index];
+            }
+            else if (Zscore < 1.5 && IsBear == true)
+            {
+                Bearn[index] = Bars.TickVolumes[index];
+            }
+            else if (Zscore >= 2.5 && IsBear == true)
+            {
+                BearH[index] = Bars.TickVolumes[index];
+            }
+
+
+
+        }
+    }
+}
+
+
